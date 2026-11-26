@@ -1,0 +1,15 @@
+ticker: TCS
+source:
+  kind: yfinance          # "yfinance" or "nse_csv"
+  symbol: TCS.NS
+  start: "2014-01-01"
+  end: null               # null = up to today
+  cache_dir: data/raw
+  nse_csv_path: "data/compiled security TCS.csv"
+target: close
+horizon: 10
+models: [naive, ets, arima, sarima, arimax, auto_arima]
+backtest:
+  initial_train_days: 1000
+  step: 5
+  horizons: [1, 5, 10]
