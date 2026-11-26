@@ -1,26 +1,28 @@
 # 📈 TCS Stock Portfolio Forecasting
 ### End-to-End Time-Series Analysis on NIFTY50 TCS Data
 
-> A decade of Tata Consultancy Services NIFTY50 stock data, stress-tested across **6 time-series models**, with SARIMA deployed for price forecasting.
+> A decade of Tata Consultancy Services NIFTY50 stock data, analysed with ARIMA-family models, with a SARIMA model fitted for price forecasting.
+>
+> **Status:** work in progress. There is no out-of-sample evaluation yet (a walk-forward backtest is coming), so no forecast-accuracy claims are made below.
 
 ---
 
 ## Overview
 
-This project performs rigorous time-series analysis and forecasting on real-world TCS (Tata Consultancy Services) NIFTY50 stock closing prices. Starting from raw NSE data, it covers data cleaning, stationarity testing, seasonality analysis, model selection via AIC/BIC, and rolling forecast evaluation across 6 model variants.
+This project performs rigorous time-series analysis and forecasting on real-world TCS (Tata Consultancy Services) NIFTY50 stock closing prices. Starting from raw NSE data, it covers data cleaning, stationarity testing, seasonality analysis, and in-sample model fitting with AIC/BIC comparison. Rolling (walk-forward) forecast evaluation is planned but not yet implemented.
 
 ---
 
-## Models Evaluated
+## Models
 
-| # | Model | Notes |
-|---|-------|-------|
-| 1 | Naive Baseline | Last-value carry-forward |
-| 2 | Exponential Smoothing | Single, double, triple |
-| 3 | ARIMA | Order selection via AIC/BIC |
-| 4 | SARIMA | Seasonal variant |
-| 5 | ARIMAX | With exogenous features |
-| 6 | Auto-ARIMA (grid search) | Exhaustive parameter search |
+| # | Model | Status |
+|---|-------|--------|
+| 1 | Naive Baseline | Planned (backtest phase) |
+| 2 | Exponential Smoothing / ETS | **Not yet implemented** |
+| 3 | AR / MA / ARMA / ARIMA | Fitted in-sample in `TCS_TSA.ipynb` |
+| 4 | SARIMA | Fitted in-sample in `Arima.ipynb` |
+| 5 | ARIMAX | **Not yet implemented** |
+| 6 | Auto-ARIMA (grid search) | **Not yet implemented** |
 
 ---
 
@@ -29,8 +31,8 @@ This project performs rigorous time-series analysis and forecasting on real-worl
 | Model | Configuration | Result |
 |-------|--------------|--------|
 | **Selected ARIMA** | (2, 1, 2) | Best AIC/BIC score |
-| **Deployed SARIMA** | (0,1,3)×(0,1,3,10) | Ljung-Box p = **0.99** (residuals white noise) |
-| **Forecast trend** | — | Upward trend in TCS closing prices |
+| **Fitted SARIMA** (`Arima.ipynb`) | (2,1,3)×(2,1,3,10) | In-sample fit only; residual diagnostics, not forecast accuracy |
+| **Out-of-sample accuracy** | — | Not yet measured (backtest coming) |
 
 ---
 
@@ -57,7 +59,7 @@ ACF / PACF Analysis
       │
       ▼
 Model Training & AIC/BIC Selection
-(6 models stress-tested)
+(in-sample; walk-forward backtest planned)
       │
       ▼
 SARIMA Deployment & Diagnostic Checks
@@ -90,15 +92,18 @@ cd TCS-StockForecasting
 pip install -r requirements.txt
 ```
 
-### Requirements
+### Package (Python 3.11)
+```bash
+pip install -e ".[dev]"   # pinned deps from pyproject.toml
+pytest -q
 ```
-pandas
-numpy
-matplotlib
-statsmodels
-scipy
-scikit-learn
+
+```python
+from tsforecast.data.sources import load_yfinance, load_nse_csv
+df = load_yfinance("TCS.NS", start="2014-01-01")   # cached under data/raw/
+# or: df = load_nse_csv("data/compiled security TCS.csv")
 ```
+See `configs/tcs.yaml` for the data source settings.
 
 ---
 
@@ -125,6 +130,10 @@ Arima.ipynb     # Model selection, SARIMA deployment, forecast plot
 TCS-StockForecasting/
 ├── TCS_TSA.ipynb               # EDA and data analysis
 ├── Arima.ipynb                 # ARIMA/SARIMA modelling and forecasting
+├── pyproject.toml
+├── configs/tcs.yaml
+├── src/tsforecast/data/     # sources.py (loaders), clean.py (cleaning)
+├── tests/
 ├── requirements.txt
 ├── README.md
 └── data/
@@ -135,9 +144,8 @@ TCS-StockForecasting/
 
 ## Diagnostics
 
-The deployed SARIMA (0,1,3)×(0,1,3,10) passes:
-- **Ljung-Box test** (p = 0.99) — residuals are white noise, no autocorrelation remaining
-- **ADF test** on differenced series — stationary confirmed before model fit
+The SARIMA actually fitted in `Arima.ipynb` is (2,1,3)×(2,1,3,10). Residual diagnostics (e.g. Ljung-Box) describe in-sample fit only and are not a measure of forecast accuracy. The seasonal period s=10 on daily trading data is not yet justified (a trading week is 5 days) and will be revisited in the backtest phase.
+- **ADF test** on differenced series — stationarity checked before model fit
 
 ---
 
